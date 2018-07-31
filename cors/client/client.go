@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-github/github"
 )
 
+// Get a new github client using an access token
 func FromToken(ctx context.Context, token string) *github.Client {
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
