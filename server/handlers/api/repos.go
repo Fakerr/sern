@@ -2,7 +2,7 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/google/go-github/github"
@@ -24,7 +24,7 @@ func GetUserRepos(w http.ResponseWriter, r *http.Request) {
 	for {
 		repos, resp, err := client.Repositories.List(r.Context(), user, opt)
 		if err != nil {
-			fmt.Printf("client.Repositories.List() failed with '%s'\n", err)
+			log.Printf("client.Repositories.List() failed with '%s'\n", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}

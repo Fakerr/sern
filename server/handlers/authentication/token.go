@@ -2,7 +2,6 @@ package authentication
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -21,7 +20,7 @@ func GithubCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	state := r.FormValue("state")
 	if state != sess.Values["state"] {
-		fmt.Printf("invalid oauth state, expected '%s', got '%s'\n", sess.Values["state"], state)
+		log.Printf("invalid oauth state, expected '%s', got '%s'\n", sess.Values["state"], state)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
@@ -29,7 +28,7 @@ func GithubCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	token, err := config.OauthConf.Exchange(oauth2.NoContext, code)
 	if err != nil {
-		fmt.Printf("oauthConf.Exchange() failed with '%s'\n", err)
+		log.Printf("oauthConf.Exchange() failed with '%s'\n", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
@@ -40,7 +39,7 @@ func GithubCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	user, _, err := client.Users.Get(context.Background(), "")
 
 	if err != nil {
-		fmt.Printf("client.Users.Get() failed with '%s'\n", err)
+		log.Printf("client.Users.Get() failed with '%s'\n", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
