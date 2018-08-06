@@ -5,12 +5,24 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Fakerr/sern/cors/client"
 	"github.com/google/go-github/github"
+
 	"github.com/gorilla/mux"
 )
 
-// fetch and return user's repositories
-func GetUserRepos(w http.ResponseWriter, r *http.Request) {
+type repository struct {
+	id    string
+	owner string
+	// The first time the user enable a repo, it should be presisted with its config.
+	// Later the user can disable the repo but its config is still saved.
+	enabled boolean
+}
+
+var enabledRepositories []repository
+
+// Fetch and return user's repositories
+func RepositoriesList(w http.ResponseWriter, r *http.Request) {
 	client := github.NewClient(nil)
 
 	user := mux.Vars(r)["user"]
@@ -45,4 +57,15 @@ func GetUserRepos(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(js)
+}
+
+// PRs for enabled repos will be queued in the merge queue
+func EnableRepo(w http.ResponseWriter, r *http.Request) {
+	sess := session.Instance(r)
+
+	//client := client.FromToken(r.Context(), sess.Values["accessToken"])
+
+	repo := repository{id: r.FormValue["repoID"], owner: sess.Values["id"], enabled: true}
+
+	enabledRepositories := append(enabledRepositories, repo)
 }
