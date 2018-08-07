@@ -60,7 +60,7 @@ func RepositoriesList(w http.ResponseWriter, r *http.Request) {
 }
 
 // PRs for enabled repos will be queued in the merge queue
-func EnableRepo(w http.ResponseWriter, r *http.Request) {
+func EnableRepository(w http.ResponseWriter, r *http.Request) {
 	sess := session.Instance(r)
 
 	//client := client.FromToken(r.Context(), sess.Values["accessToken"])
