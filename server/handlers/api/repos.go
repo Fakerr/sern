@@ -5,9 +5,11 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Fakerr/sern/config"
 	"github.com/Fakerr/sern/cors/client"
-	"github.com/google/go-github/github"
+	"github.com/Fakerr/sern/server/session"
 
+	"github.com/google/go-github/github"
 	"github.com/gorilla/mux"
 )
 
@@ -16,7 +18,7 @@ type repository struct {
 	owner string
 	// The first time the user enable a repo, it should be presisted with its config.
 	// Later the user can disable the repo but its config is still saved.
-	enabled boolean
+	enabled bool
 }
 
 var enabledRepositories []repository
@@ -63,9 +65,21 @@ func RepositoriesList(w http.ResponseWriter, r *http.Request) {
 func EnableRepository(w http.ResponseWriter, r *http.Request) {
 	sess := session.Instance(r)
 
-	//client := client.FromToken(r.Context(), sess.Values["accessToken"])
+	token := sess.Values["accessToken"].(string)
+	userLogin := sess.Values["login"].(string)
+	repoID := r.FormValue("repoID")
 
-	repo := repository{id: r.FormValue["repoID"], owner: sess.Values["id"], enabled: true}
+	client := client.FromToken(r.Context(), token)
 
-	enabledRepositories := append(enabledRepositories, repo)
+	hook := config.GetHookConfig(userLogin)
+
+	_, _, err := client.Repositories.CreateHook(r.Context(), userLogin, repoID, hook)
+	if err != nil {
+		log.Printf("client.Repositories.CreateHook() failed with '%s'\n", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	//repo := repository{id: r.FormValue["repoID"], owner: sess.Values["id"], enabled: true}
+	//enabledRepositories := append(enabledRepositories, repo)
 }
