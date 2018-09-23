@@ -7,21 +7,12 @@ import (
 
 	"github.com/Fakerr/sern/config"
 	"github.com/Fakerr/sern/cors/client"
+	"github.com/Fakerr/sern/persist"
 	"github.com/Fakerr/sern/server/session"
 
 	"github.com/google/go-github/github"
 	"github.com/gorilla/mux"
 )
-
-type repository struct {
-	id    string
-	owner string
-	// The first time the user enable a repo, it should be presisted with its config.
-	// Later the user can disable the repo but its config is still saved.
-	enabled bool
-}
-
-var enabledRepositories []repository
 
 // Fetch and return user's repositories
 func RepositoriesList(w http.ResponseWriter, r *http.Request) {
@@ -42,6 +33,7 @@ func RepositoriesList(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
+
 		allRepos = append(allRepos, repos...)
 		if resp.NextPage == 0 {
 			break
@@ -61,25 +53,49 @@ func RepositoriesList(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
-// PRs for enabled repos will be queued in the merge queue
+// Pull requests for enabled repos will be queued before they get merged.
+// When the user enable a repository, a webhook will be created and will listen
+// to any Pull request event.
+// The repositry config will be persisted in the database.
 func EnableRepository(w http.ResponseWriter, r *http.Request) {
+
+	log.Print("Processing EnableRepository ...\n")
+
 	sess := session.Instance(r)
 
 	token := sess.Values["accessToken"].(string)
-	userLogin := sess.Values["login"].(string)
-	repoID := r.FormValue("repoID")
+	userLogin := sess.Values["login"].(string) // Maybe this one should be reconsidered...
+	repo := r.FormValue("repoID")
+	fullRepo := userLogin + "/" + repo // Should be in this form: owner/repo
 
+	// Create the repository and presist it if it doesn't exist in the db.
+	repository := &persist.Repository{
+		Name:    fullRepo,
+		Owner:   userLogin,
+		Enabled: true,
+	}
+
+	// Enable repository (Persist in the db).
+	err := persist.AddRepository(repository)
+	if err != nil {
+		log.Printf("persist.addRepository() failed with '%s'\n", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	// Create a webhook for this repository
+	// Get a github client using the user's token
 	client := client.FromToken(r.Context(), token)
 
+	// Get a default hook config
 	hook := config.GetHookConfig(userLogin)
 
-	_, _, err := client.Repositories.CreateHook(r.Context(), userLogin, repoID, hook)
+	// Normally, this should not return a 'webhook already exists' error since each webhook
+	// will be deleted once the user disable a repository.
+	_, _, err = client.Repositories.CreateHook(r.Context(), userLogin, repo, hook)
 	if err != nil {
 		log.Printf("client.Repositories.CreateHook() failed with '%s'\n", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
-
-	//repo := repository{id: r.FormValue["repoID"], owner: sess.Values["id"], enabled: true}
-	//enabledRepositories := append(enabledRepositories, repo)
 }
