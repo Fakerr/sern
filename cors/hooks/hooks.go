@@ -21,6 +21,7 @@ func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEve
 	owner := *event.Repo.Owner.Login
 	repo := *event.Repo.Name
 	fullRepo := owner + "/" + repo
+	installationID := *event.Installation.ID
 
 	log.Printf("ProcessIssueCommentEvent %s\n", fullRepo)
 
@@ -32,7 +33,7 @@ func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEve
 		return nil
 	}
 
-	// if the Issue Comment is not valid, return
+	// if the Issue Comment is not a valid command, return
 	cmd, ok := parseComment(body)
 	if !ok {
 		return nil
