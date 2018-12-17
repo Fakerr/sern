@@ -34,15 +34,23 @@ func WebhookCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		err := hooks.ProcessIssueCommentEvent(ctx, event)
 
 		if err != nil {
-			log.Printf("IssueComment error: %v\n", err)
+			log.Printf("ERRO: [ ProcessIssueCommentEvent ] failed with: %s\n", err)
+		}
+
+		w.WriteHeader(http.StatusOK)
+		return
+	case *github.CheckSuiteEvent:
+		err := hooks.ProcessCheckSuiteEvent(ctx, event)
+
+		if err != nil {
+			log.Printf("ERRO: [ ProcessCheckSuiteEvent ] failed with: %s\n", err)
 		}
 
 		w.WriteHeader(http.StatusOK)
 		return
 	default:
 		w.WriteHeader(http.StatusOK)
-		log.Println("warn: Unsupported type events")
-		log.Println(reflect.TypeOf(event))
+		log.Printf("WARN: Unsupported type events %v\n", reflect.TypeOf(event))
 		//io.WriteString(rw, "This event type is not supported: "+github.WebHookType(req))
 		return
 	}

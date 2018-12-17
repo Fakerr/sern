@@ -23,7 +23,7 @@ func WithAuth(next http.Handler) http.Handler {
 
 		// Extend context with the user's token (Am I using this ?)
 		if token, ok := sess.Values["accessToken"]; ok {
-			log.Printf("Authenticated user %s\n", sess.Values["login"])
+			log.Printf("INFO: Authenticated user %s\n", sess.Values["login"])
 			ctx := context.WithValue(r.Context(), "token", token)
 			r = r.WithContext(ctx)
 		}

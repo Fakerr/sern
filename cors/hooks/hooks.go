@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/Fakerr/sern/config"
+	"github.com/Fakerr/sern/cors/actions"
+	"github.com/Fakerr/sern/cors/client"
 	"github.com/Fakerr/sern/cors/queue"
 
 	"github.com/google/go-github/github"
@@ -13,6 +16,9 @@ import (
 // Handle IssueComment event
 func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEvent) error {
 
+	log.Println("INFO: start [ ProcessIssueCommentEvent ]")
+	defer log.Println("INFO: end [ ProcessIssueCommentEvent ]")
+
 	// Return an error if the action is different from "created"
 	if action := event.Action; (action == nil) || (*action != "created") {
 		return fmt.Errorf("Accept only `action === \"created\"` event")
@@ -20,12 +26,14 @@ func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEve
 
 	owner := *event.Repo.Owner.Login
 	repo := *event.Repo.Name
-	fullRepo := owner + "/" + repo
-	installationID := *event.Installation.ID
+	fullRepo := *event.Repo.FullName
 
-	log.Printf("ProcessIssueCommentEvent %s\n", fullRepo)
+	// For now, make the commands available only for the repo's owner.
+	if owner != *event.Comment.User.Login {
+		return fmt.Errorf("Only the repo's owner is able to run this command.")
+	}
 
-	body := *event.Comment.Body
+	log.Printf("INFO: processing %s\n", fullRepo)
 
 	// Check whether or not the Issue Comment was made on a Pull Request.
 	// If not, return as nothing to do.
@@ -33,22 +41,78 @@ func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEve
 		return nil
 	}
 
+	body := *event.Comment.Body
+
 	// if the Issue Comment is not a valid command, return
 	cmd, ok := parseComment(body)
 	if !ok {
+		log.Println("INFO: aborting: not a sern command.")
 		return nil
 	}
 
+	// Create an installation client.
+	client := client.GetInstallationClient(int(*event.Installation.ID))
+
 	if cmd == "test" {
-		pr, err := createPullRequest(event)
+		pr, err := createPullRequest(ctx, client, owner, repo, event)
 		if err != nil {
-			return fmt.Errorf("createPullRequest error %s", err)
+			return fmt.Errorf("[ createPullRequest ] failed with %s\n", err)
 		}
 
-		err = queue.AddToQueue(fullRepo, pr)
+		// Make sure the PR is not already queued before processing.
+		err = queue.AddToQueue(owner, repo, pr)
 		if err != nil {
-			return fmt.Errorf("queue.AddToQueue error %s", err)
+			return fmt.Errorf("[ queue.AddToQueue ] failed with %s\n", err)
 		}
+
+		queue.Next(ctx, client, owner, repo)
+	}
+
+	return nil
+}
+
+// Handle CheckSuite event
+func ProcessCheckSuiteEvent(ctx context.Context, event *github.CheckSuiteEvent) error {
+
+	log.Println("INFO: start [ ProcessIssueCommentEvent ]")
+	defer log.Println("INFO: end [ ProcessIssueCommentEvent ]")
+
+	fullName := *event.Repo.FullName
+	log.Printf("INFO: processing repository: %s\n", fullName)
+
+	// Make sure the CheckSuite event is about the staging branch.
+	log.Printf("DEBU: checkSuite headBranch: %s\n", *event.CheckSuite.HeadBranch)
+	if *event.CheckSuite.HeadBranch != config.StagingBranch {
+		log.Println("INFO: CheckSuite's headBranch different from StagingBranch. Aborting!")
+		return nil
+	}
+
+	log.Printf("DEBU: CheckSuite status: %s\n", *event.CheckSuite.Status)
+	if status := *event.CheckSuite.Status; status != "completed" {
+		log.Println("INFO: status different from 'completed' is not handled")
+		return nil
+	}
+
+	// Get active PR (will be refactored once a Runner will be implemented)
+	activePR := queue.ReposQueue[fullName][0]
+
+	// Make sure the event's commit hash is the same as the active PR's merge commit hash.
+	log.Printf("DEBU: event's commit hash: %v\n", *event.CheckSuite.HeadSHA)
+	log.Printf("DEBU: active PR's commit hash: %v\n", activePR.MergeCommitSHA)
+	if activePR.MergeCommitSHA != *event.CheckSuite.HeadSHA {
+		log.Println("INFO: event's commit hash different from the active PR's merge commit hash")
+		return nil
+	}
+
+	owner := *event.Repo.Owner.Login
+	repo := *event.Repo.Name
+
+	// Create an installation client.
+	client := client.GetInstallationClient(int(*event.Installation.ID))
+
+	err := actions.ProceedMerging(ctx, client, event, owner, repo, activePR)
+	if err != nil {
+		return fmt.Errorf("[ actions.ProceedMerging ] failed with %s\n", err)
 	}
 
 	return nil
@@ -63,10 +127,24 @@ func parseComment(body string) (string, bool) {
 }
 
 // Create a new pull request ready to be queued.
-func createPullRequest(event *github.IssueCommentEvent) (*queue.PullRequest, error) {
+func createPullRequest(ctx context.Context, client *github.Client, owner, repo string, event *github.IssueCommentEvent) (*queue.PullRequest, error) {
+
+	log.Println("INFO: start [ createPullRequest ]")
+	defer log.Println("INFO: end [ createPullRequest ]")
+
+	number := *event.Issue.Number
+	fullName := owner + "/" + repo
+
+	// Fetch PullRequest
+	pull, _, err := client.PullRequests.Get(ctx, owner, repo, number)
+	if err != nil {
+		return nil, fmt.Errorf("client.PullRequests.Get() failed for %s with: %s\n", fullName, err)
+	}
+
 	pr := &queue.PullRequest{
-		Id:     *event.Issue.Number,
-		Status: "pending",
+		Id:             number,
+		Status:         "pending",
+		MergeCommitSHA: *pull.MergeCommitSHA,
 	}
 	return pr, nil
 }
