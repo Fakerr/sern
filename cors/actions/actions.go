@@ -6,13 +6,13 @@ import (
 	"log"
 
 	"github.com/Fakerr/sern/config"
-	"github.com/Fakerr/sern/cors/queue"
+	//"github.com/Fakerr/sern/cors/queue"
 
 	"github.com/google/go-github/github"
 )
 
 // Create a staging branch to test branch with upstream
-func CreateStagingBranch(ctx context.Context, client *github.Client, owner, repo string, prID int) (*github.Reference, error) {
+func CreateStagingBranch(ctx context.Context, client *github.Client, owner, repo string, prNumber int) (*github.Reference, error) {
 
 	log.Println("INFO: start [ CreateStagingBranch ]")
 	defer log.Println("INFO: end [ CreateStagingBranch ]")
@@ -20,7 +20,7 @@ func CreateStagingBranch(ctx context.Context, client *github.Client, owner, repo
 	stagingName := "refs/heads/" + config.StagingBranch
 	log.Printf("DEBU: stagingName: %v\n", stagingName)
 
-	sourceName := fmt.Sprintf("refs/pull/%d/merge", prID)
+	sourceName := fmt.Sprintf("refs/pull/%d/merge", prNumber)
 	log.Printf("DEBU: sourceName: %v\n", sourceName)
 
 	// Clean up staging branch before processing
@@ -49,32 +49,62 @@ func CreateStagingBranch(ctx context.Context, client *github.Client, owner, repo
 }
 
 // Merge the pull request if the checkSuite's status is 'success'
-func ProceedMerging(ctx context, client *github.Client, event *github.CheckSuiteEvent, owner, repo string, activePR *queue.PullRequest) error {
+func ProceedMerging(ctx context.Context, client *github.Client, event *github.CheckSuiteEvent, owner, repo, activeSHA string, number int /*, activePR *queue.PullRequest*/) error {
 
 	log.Println("INFO: start [ ProceedMerging ]")
 	defer log.Println("INFO: end [ ProceedMerging ]")
 
-	prID := activePR.Id
+	//activeNumber := activePR.number
+	//activeSHA := activePR.MergeCommitSHA
+	activeNumber := number
 
-	prInfo, _, err := client.PullRequests.Get(ctx, owner, repo, prId)
+	pr, _, err := client.PullRequests.Get(ctx, owner, repo, activeNumber)
 	if err != nil {
-		return fmt.Errorf("client.PullRequests.Get() failed for with: %s\n", err)
+		return fmt.Errorf("client.PullRequests.Get() failed with: %s\n", err)
 	}
 
-	if *prInfo.State != "open" {
-		log.Printf("INFOR: Pull request %v is no longer open\n", prID)
+	if *pr.State != "open" {
+		log.Printf("INFO: Pull request %v is no longer open\n", activeNumber)
 		return nil
 	}
 
 	if conclusion := *event.CheckSuite.Conclusion; conclusion != "success" {
 		log.Println("INFO: conclusion different from 'success', could not merge the pull request")
-		// Comment on the PR + update the PR's labels
+		// TODO: Comment on the PR + update the PR's labels
 		return nil
 	}
 
-	// Comment staging branch status.
+	// Comment staging branch status in the PR itself
+
+	// Make sure the PR's SHA is the same as the active PR's SHA before merging (in case someone committed smthg during the batch)
+	if activeSHA != *pr.Head.SHA {
+		log.Printf("INFO: activeSHA different from the PR number %s SHA for %s/%s \n", activeNumber, owner, repo)
+		// TODO Comment the problem on the PR
+		return nil
+	}
 
 	// Merge the pullRequest
+	ok := mergePullRequest(ctx, client, owner, repo, pr, activeSHA)
+	if !ok {
+		log.Printf("INFO: PR %v for %s/%s failed to merge!\n", activeNumber, owner, repo)
+	}
 
-	log.Println("INFO: PR %v for %s/%s merged successfully!\n", prID, owner, repo)
+	log.Printf("INFO: PR %v for %s/%s merged successfully!\n", activeNumber, owner, repo)
+
+	return nil
+}
+
+func mergePullRequest(ctx context.Context, client *github.Client, owner, repo string, pr *github.PullRequest, activeSHA string) bool {
+
+	// Merge the active PR's changesets
+	option := &github.PullRequestOptions{
+		SHA: activeSHA,
+	}
+
+	_, _, err := client.PullRequests.Merge(ctx, owner, repo, *pr.Number, "", option)
+	if err != nil {
+		log.Printf("WARN: client.PullRequests.Merge() failed with %s\n", err)
+		return false
+	}
+	return true
 }

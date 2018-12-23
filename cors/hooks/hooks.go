@@ -74,8 +74,8 @@ func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEve
 // Handle CheckSuite event
 func ProcessCheckSuiteEvent(ctx context.Context, event *github.CheckSuiteEvent) error {
 
-	log.Println("INFO: start [ ProcessIssueCommentEvent ]")
-	defer log.Println("INFO: end [ ProcessIssueCommentEvent ]")
+	log.Println("INFO: start [ ProcessCheckSuiteEvent ]")
+	defer log.Println("INFO: end [ ProcessCheckSuiteEvent ]")
 
 	fullName := *event.Repo.FullName
 	log.Printf("INFO: processing repository: %s\n", fullName)
@@ -98,7 +98,7 @@ func ProcessCheckSuiteEvent(ctx context.Context, event *github.CheckSuiteEvent) 
 
 	// Make sure the event's commit hash is the same as the active PR's merge commit hash.
 	log.Printf("DEBU: event's commit hash: %v\n", *event.CheckSuite.HeadSHA)
-	log.Printf("DEBU: active PR's commit hash: %v\n", activePR.MergeCommitSHA)
+	log.Printf("DEBU: active PR's merge commit hash: %v\n", activePR.MergeCommitSHA)
 	if activePR.MergeCommitSHA != *event.CheckSuite.HeadSHA {
 		log.Println("INFO: event's commit hash different from the active PR's merge commit hash")
 		return nil
@@ -110,7 +110,7 @@ func ProcessCheckSuiteEvent(ctx context.Context, event *github.CheckSuiteEvent) 
 	// Create an installation client.
 	client := client.GetInstallationClient(int(*event.Installation.ID))
 
-	err := actions.ProceedMerging(ctx, client, event, owner, repo, activePR)
+	err := actions.ProceedMerging(ctx, client, event, owner, repo, activePR.HeadSHA, activePR.Number /*, activePR*/)
 	if err != nil {
 		return fmt.Errorf("[ actions.ProceedMerging ] failed with %s\n", err)
 	}
@@ -142,8 +142,9 @@ func createPullRequest(ctx context.Context, client *github.Client, owner, repo s
 	}
 
 	pr := &queue.PullRequest{
-		Id:             number,
+		Number:         number,
 		Status:         "pending",
+		HeadSHA:        *pull.Head.SHA,
 		MergeCommitSHA: *pull.MergeCommitSHA,
 	}
 	return pr, nil

@@ -18,8 +18,9 @@ func SetQueue() {
 }
 
 type PullRequest struct {
-	Id             int
+	Number         int
 	Status         string
+	HeadSHA        string
 	MergeCommitSHA string
 }
 
@@ -47,7 +48,7 @@ func Next(ctx context.Context, client *github.Client, owner, repo string) {
 
 	// Create a staging branch using the pull request merge commit.
 	// Make sure to clean up (delete) the staging branch after each batch.
-	_, err := actions.CreateStagingBranch(ctx, client, owner, repo, pr.Id)
+	_, err := actions.CreateStagingBranch(ctx, client, owner, repo, pr.Number)
 	if err != nil {
 		log.Printf("ERRO: [ CreateStagingBranch ] failed with %s\n", err)
 		return
