@@ -9,6 +9,7 @@ import (
 	"github.com/Fakerr/sern/cors/actions"
 	"github.com/Fakerr/sern/cors/client"
 	"github.com/Fakerr/sern/cors/queue"
+	"github.com/Fakerr/sern/cors/runner"
 
 	"github.com/google/go-github/github"
 )
@@ -26,14 +27,13 @@ func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEve
 
 	owner := *event.Repo.Owner.Login
 	repo := *event.Repo.Name
-	fullRepo := *event.Repo.FullName
 
 	// For now, make the commands available only for the repo's owner.
 	if owner != *event.Comment.User.Login {
 		return fmt.Errorf("Only the repo's owner is able to run this command.")
 	}
 
-	log.Printf("INFO: processing %s\n", fullRepo)
+	log.Printf("INFO: processing %s/%s \n", owner, repo)
 
 	// Check whether or not the Issue Comment was made on a Pull Request.
 	// If not, return as nothing to do.
@@ -59,13 +59,10 @@ func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEve
 			return fmt.Errorf("[ createPullRequest ] failed with %s\n", err)
 		}
 
-		// Make sure the PR is not already queued before processing.
-		err = queue.AddToQueue(owner, repo, pr)
-		if err != nil {
-			return fmt.Errorf("[ queue.AddToQueue ] failed with %s\n", err)
-		}
-
-		queue.Next(ctx, client, owner, repo)
+		// Get the current runner or create a new one if it doesn't exist
+		runner := runner.GetRunner(owner, repo)
+		runner.Queue.Add(pr)
+		runner.Next(ctx, client)
 	}
 
 	return nil
@@ -93,8 +90,12 @@ func ProcessCheckSuiteEvent(ctx context.Context, event *github.CheckSuiteEvent) 
 		return nil
 	}
 
-	// Get active PR (will be refactored once a Runner will be implemented)
-	activePR := queue.ReposQueue[fullName][0]
+	owner := *event.Repo.Owner.Login
+	repo := *event.Repo.Name
+
+	// Get the runner instance
+	runner := runner.GetRunner(owner, repo)
+	activePR := runner.Active
 
 	// Make sure the event's commit hash is the same as the active PR's merge commit hash.
 	log.Printf("DEBU: event's commit hash: %v\n", *event.CheckSuite.HeadSHA)
@@ -104,15 +105,18 @@ func ProcessCheckSuiteEvent(ctx context.Context, event *github.CheckSuiteEvent) 
 		return nil
 	}
 
-	owner := *event.Repo.Owner.Login
-	repo := *event.Repo.Name
-
 	// Create an installation client.
 	client := client.GetInstallationClient(int(*event.Installation.ID))
 
-	err := actions.ProceedMerging(ctx, client, event, owner, repo, activePR.HeadSHA, activePR.Number /*, activePR*/)
+	ok, err := actions.ProceedMerging(ctx, client, event, owner, repo, activePR)
 	if err != nil {
 		return fmt.Errorf("[ actions.ProceedMerging ] failed with %s\n", err)
+	}
+
+	// Once a PR is successfully merged, clear the active item and process the next one.
+	if ok {
+		runner.RemoveActive()
+		runner.Next(ctx, client)
 	}
 
 	return nil
