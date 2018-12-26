@@ -147,7 +147,6 @@ func createPullRequest(ctx context.Context, client *github.Client, owner, repo s
 
 	pr := &queue.PullRequest{
 		Number:         number,
-		Status:         "pending",
 		HeadSHA:        *pull.Head.SHA,
 		MergeCommitSHA: *pull.MergeCommitSHA,
 	}

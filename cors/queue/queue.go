@@ -6,7 +6,6 @@ import (
 
 type PullRequest struct {
 	Number         int
-	Status         string
 	HeadSHA        string
 	MergeCommitSHA string
 }

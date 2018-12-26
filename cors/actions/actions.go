@@ -60,7 +60,7 @@ func ProceedMerging(ctx context.Context, client *github.Client, event *github.Ch
 	defer log.Println("INFO: end [ ProceedMerging ]")
 
 	activeNumber := activePR.Number
-	activeSHA := activePR.MergeCommitSHA
+	activeSHA := activePR.HeadSHA
 
 	pr, _, err := client.PullRequests.Get(ctx, owner, repo, activeNumber)
 	if err != nil {

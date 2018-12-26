@@ -18,6 +18,7 @@ func SetRunners() {
 }
 
 // If it exists, return the owner/repo's runner, otherwise create a new one.
+// If no items left, the runner should be destroyed
 func GetRunner(owner, repo string) *Runner {
 	name := owner + "/" + repo
 
@@ -36,7 +37,23 @@ func GetRunner(owner, repo string) *Runner {
 	initQueue := make([]*queue.PullRequest, 0)
 	runner.Queue.Init(initQueue)
 
+	// Add the new runner in the Global runners store
+	ReposRunner[name] = runner
+	log.Printf("INFO: A new runner for %s has been created!\n", name)
+
 	return runner
+}
+
+// Get the runner without creating a new one if it doesn't exist
+func GetSoftRunner(owner, repo string) *Runner {
+	name := owner + "/" + repo
+
+	runner, ok := ReposRunner[name]
+	if ok {
+		return runner
+	}
+
+	return nil
 }
 
 type Runner struct {
@@ -109,6 +126,5 @@ func (r *Runner) getNextItem() *queue.PullRequest {
 
 	// Before returning the next Item, make sure the accepted PR is still accurate (PR still open, same SHA,...)
 	// otherwise, ignore and take the item that comes after
-
 	return next
 }
