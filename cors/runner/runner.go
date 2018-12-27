@@ -90,9 +90,11 @@ func (r *Runner) Next(ctx context.Context, client *github.Client) {
 	r.Locked = true
 	nextItem := r.getNextItem()
 
-	// If no item left in the queue.
+	// If no item left in the queue, destroy the runner
 	if nextItem == nil {
-		r.Locked = false
+		name := r.Owner + "/" + r.Repo
+		log.Printf("INFO: no items left in the queue for %s, deleting the runner...\n", name)
+		delete(ReposRunner, name)
 		return
 	}
 

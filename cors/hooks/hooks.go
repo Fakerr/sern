@@ -108,16 +108,14 @@ func ProcessCheckSuiteEvent(ctx context.Context, event *github.CheckSuiteEvent) 
 	// Create an installation client.
 	client := client.GetInstallationClient(int(*event.Installation.ID))
 
-	ok, err := actions.ProceedMerging(ctx, client, event, owner, repo, activePR)
+	_, err := actions.ProceedMerging(ctx, client, event, owner, repo, activePR)
 	if err != nil {
 		return fmt.Errorf("[ actions.ProceedMerging ] failed with %s\n", err)
 	}
 
-	// Once a PR is successfully merged, clear the active item and process the next one.
-	if ok {
-		runner.RemoveActive()
-		runner.Next(ctx, client)
-	}
+	// Regardless the previous item succeed to merge or not, proceed to the next item
+	runner.RemoveActive()
+	runner.Next(ctx, client)
 
 	return nil
 }

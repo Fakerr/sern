@@ -114,6 +114,7 @@ func mergePullRequest(ctx context.Context, client *github.Client, owner, repo st
 		log.Printf("WARN: client.PullRequests.Merge() failed with %s\n", err)
 		// TODO:
 		// Add comment on the Pull request
+		// Items that failed to merge will be ignored and removed from the queue (for now)
 		return false
 	}
 	return true
