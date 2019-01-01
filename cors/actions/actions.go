@@ -25,10 +25,7 @@ func CreateStagingBranch(ctx context.Context, client *github.Client, owner, repo
 	log.Printf("DEBU: sourceName: %v\n", sourceName)
 
 	// Clean up staging branch before processing
-	log.Println("INFO: clean up staging branch")
-	if _, err := client.Git.DeleteRef(ctx, owner, repo, stagingName); err != nil {
-		log.Println("INFO: client.Git.DeleteRef() failed with %s but continuing...", err)
-	}
+	DeleteStagingBranch(ctx, client, owner, repo, stagingName)
 
 	sourceRef, _, err := client.Git.GetRef(ctx, owner, repo, sourceName)
 	if err != nil {
@@ -54,7 +51,21 @@ func CreateStagingBranch(ctx context.Context, client *github.Client, owner, repo
 	return ref, nil
 }
 
+// Delete the staging branch
+func DeleteStagingBranch(ctx context.Context, client *github.Client, owner, repo string, staging string) {
+
+	log.Println("INFO: start [ DeleteStagingBranch ]")
+	defer log.Println("INFO: end [ DeleteStagingBranch ]")
+
+	_, err := client.Git.DeleteRef(ctx, owner, repo, staging)
+	if err != nil {
+		// If the branch doesn't exist, we can get an error
+		log.Println("INFO: client.Git.DeleteRef() failed with %s but continuing...", err)
+	}
+}
+
 // Merge the pull request if the checkSuite's status is 'success'
+// After merge, delete the staging branch
 func ProceedMerging(ctx context.Context, client *github.Client, event *github.CheckSuiteEvent, owner, repo string, activePR *queue.PullRequest) (bool, error) {
 
 	log.Println("INFO: start [ ProceedMerging ]")
@@ -99,6 +110,10 @@ func ProceedMerging(ctx context.Context, client *github.Client, event *github.Ch
 	}
 
 	log.Printf("INFO: PR %v for %s/%s merged successfully!\n", activeNumber, owner, repo)
+	log.Printf("INFO: Deleting staging branch for %s/%s\n", owner, repo)
+
+	stagingName := "refs/heads/" + config.StagingBranch
+	DeleteStagingBranch(ctx, client, owner, repo, stagingName)
 
 	return true, nil
 }
@@ -131,6 +146,7 @@ func CheckMergeability(ctx context.Context, client *github.Client, owner, repo s
 	if mergeable == nil {
 		// If the value is nil, then GitHub has started a background job to compute the mergeability and it's not complete yet.
 		// Sleep 5 seconds and try again
+		log.Printf("INFO: merageability info not yet ready for %s/%s number: %v, sleeping for 5 seconds...\n", owner, repo, num)
 		time.Sleep(5 * time.Second)
 
 		pr, _, err := client.PullRequests.Get(ctx, owner, repo, num)
@@ -144,6 +160,8 @@ func CheckMergeability(ctx context.Context, client *github.Client, owner, repo s
 			return true
 		}
 
-		return pr.Mergeable
+		return *pr.Mergeable
 	}
+
+	return *pr.Mergeable
 }

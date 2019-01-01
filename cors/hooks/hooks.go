@@ -98,8 +98,6 @@ func ProcessCheckSuiteEvent(ctx context.Context, event *github.CheckSuiteEvent) 
 	activePR := runner.Active
 
 	// Make sure the event's commit hash is the same as the active PR's merge commit hash.
-	log.Printf("DEBU: event's commit hash: %v\n", *event.CheckSuite.HeadSHA)
-	log.Printf("DEBU: active PR's merge commit hash: %v\n", activePR.MergeCommitSHA)
 	if activePR.MergeCommitSHA != *event.CheckSuite.HeadSHA {
 		log.Println("INFO: event's commit hash different from the active PR's merge commit hash")
 		return nil

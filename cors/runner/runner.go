@@ -150,7 +150,7 @@ func (r *Runner) getNextItem(ctx context.Context, client *github.Client) *queue.
 			continue
 		}
 
-		mergeable := actions.CheckMergeability(ctx, client, owner, repo, num, pr)
+		mergeable := actions.CheckMergeability(ctx, client, r.Owner, r.Repo, num, pr)
 		if !mergeable {
 			log.Printf("INFO: PR for %s/%s number: %v is not mergeable\n", r.Owner, r.Repo, num)
 			// TODO:
@@ -161,7 +161,6 @@ func (r *Runner) getNextItem(ctx context.Context, client *github.Client) *queue.
 		// TODO:
 		// Check if all required labels are set correctly
 
+		return next
 	}
-
-	return next
 }
