@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/Fakerr/sern/config"
 	"github.com/Fakerr/sern/cors/queue"
@@ -118,4 +119,31 @@ func mergePullRequest(ctx context.Context, client *github.Client, owner, repo st
 		return false
 	}
 	return true
+}
+
+// Check whether or not a PR is still meargeable
+func CheckMergeability(ctx context.Context, client *github.Client, owner, repo string, num int, pr *github.PullRequest) bool {
+
+	log.Printf("INFO: start checking mergeability for %s/%s number: %v\n", owner, repo, num)
+
+	mergeable := pr.Mergeable
+
+	if mergeable == nil {
+		// If the value is nil, then GitHub has started a background job to compute the mergeability and it's not complete yet.
+		// Sleep 5 seconds and try again
+		time.Sleep(5 * time.Second)
+
+		pr, _, err := client.PullRequests.Get(ctx, owner, repo, num)
+		if err != nil {
+			log.Printf("ERRO: client.PullRequests.Get() failed for %s/%s number: %v with: %s\n", owner, repo, num, err)
+			return false
+		}
+
+		if pr.Mergeable == nil {
+			log.Printf("INFO: Cannot get merageability info for %s/%s number: %v but treating it as if mergeable\n", owner, repo, num)
+			return true
+		}
+
+		return pr.Mergeable
+	}
 }

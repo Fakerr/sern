@@ -13,7 +13,7 @@ import (
 // A map with a all enabled repositories and their current runner. Should be presisted (redis).
 var ReposRunner map[string]*Runner
 
-func SetRunners() {
+func InitRunners() {
 	ReposRunner = make(map[string]*Runner)
 }
 
@@ -88,7 +88,7 @@ func (r *Runner) Next(ctx context.Context, client *github.Client) {
 	}
 
 	r.Locked = true
-	nextItem := r.getNextItem()
+	nextItem := r.getNextItem(ctx, client)
 
 	// If no item left in the queue, destroy the runner
 	if nextItem == nil {
@@ -117,16 +117,51 @@ func (r *Runner) Next(ctx context.Context, client *github.Client) {
 	return
 }
 
-func (r *Runner) getNextItem() *queue.PullRequest {
+func (r *Runner) getNextItem(ctx context.Context, client *github.Client) *queue.PullRequest {
 
-	next := r.Queue.GetFirst()
+	log.Printf("INFO: start [ runner.getNextItem ] for %s/%s \n", r.Owner, r.Repo)
+	defer log.Printf("INFO: end [ runner.getNextItem ] for %s/%s \n", r.Owner, r.Repo)
 
-	// If not item left in the queue, return nil
-	if next == nil {
-		return nil
+	for {
+		next := r.Queue.GetFirst()
+
+		// If not item left in the queue, return nil
+		if next == nil {
+			return nil
+		}
+
+		num := next.Number
+
+		pr, _, err := client.PullRequests.Get(ctx, r.Owner, r.Repo, num)
+		if err != nil {
+			log.Printf("ERRO: client.PullRequests.Get() failed for %s/%s number: %v with: %s\n", r.Owner, r.Repo, num, err)
+			continue
+		}
+
+		if state := *pr.State; state != "open" {
+			log.Printf("INFO: Pull request %v is no longer open for %s/%s\n", num, r.Owner, r.Repo)
+			continue
+		}
+
+		if next.HeadSHA != *pr.Head.SHA {
+			log.Printf("INFO: next's SHA different from the PR number: %s SHA for %s/%s \n", num, r.Owner, r.Repo)
+			// TODO:
+			// comment on the PR
+			continue
+		}
+
+		mergeable := actions.CheckMergeability(ctx, client, owner, repo, num, pr)
+		if !mergeable {
+			log.Printf("INFO: PR for %s/%s number: %v is not mergeable\n", r.Owner, r.Repo, num)
+			// TODO:
+			// Comment on the PR: merge conflict
+			continue
+		}
+
+		// TODO:
+		// Check if all required labels are set correctly
+
 	}
 
-	// Before returning the next Item, make sure the accepted PR is still accurate (PR still open, same SHA,...)
-	// otherwise, ignore and take the item that comes after
 	return next
 }
