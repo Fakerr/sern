@@ -1,7 +1,12 @@
 package queue
 
 import (
+	"context"
 	"log"
+
+	"github.com/Fakerr/sern/cors/comments"
+
+	"github.com/google/go-github/github"
 )
 
 type PullRequest struct {
@@ -33,17 +38,21 @@ func (q *QueueMerge) RemoveFirst() {
 }
 
 // Add Pull Request to the merge queue.
-func (q *QueueMerge) Add(pr *PullRequest) {
+func (q *QueueMerge) Add(ctx context.Context, client *github.Client, owner, repo string, pr *PullRequest) {
 	//make sure the PR is not already in the queue.
 	for _, item := range q.QueueItems {
 		if item.Number == pr.Number {
 			log.Printf("WARN: Pull Request %v already queued", pr)
-			// TODO:
-			// Add comment on the PR (already queued)
+			// msg := "PR number " + pr.Number + " already queued."
+			msg := "msg 1"
+			comments.AddComment(ctx, client, owner, repo, pr.Number, msg)
 			return
 		}
 	}
 	q.QueueItems = append(q.QueueItems, pr)
+	// msg := "Pull request added in the merge queue."
+	msg := "msg 2"
+	comments.AddComment(ctx, client, owner, repo, pr.Number, msg)
 	return
 }
 

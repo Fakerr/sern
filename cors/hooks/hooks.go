@@ -61,7 +61,7 @@ func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEve
 
 		// Get the current runner or create a new one if it doesn't exist
 		runner := runner.GetRunner(owner, repo)
-		runner.Queue.Add(pr)
+		runner.Queue.Add(ctx, client, owner, repo, pr)
 		runner.Next(ctx, client)
 	}
 

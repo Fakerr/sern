@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/Fakerr/sern/cors/actions"
+	"github.com/Fakerr/sern/cors/comments"
 	"github.com/Fakerr/sern/cors/queue"
 
 	"github.com/google/go-github/github"
@@ -135,26 +136,32 @@ func (r *Runner) getNextItem(ctx context.Context, client *github.Client) *queue.
 		pr, _, err := client.PullRequests.Get(ctx, r.Owner, r.Repo, num)
 		if err != nil {
 			log.Printf("ERRO: client.PullRequests.Get() failed for %s/%s number: %v with: %s\n", r.Owner, r.Repo, num, err)
+			r.Queue.RemoveFirst()
 			continue
 		}
 
 		if state := *pr.State; state != "open" {
 			log.Printf("INFO: Pull request %v is no longer open for %s/%s\n", num, r.Owner, r.Repo)
+			r.Queue.RemoveFirst()
 			continue
 		}
 
 		if next.HeadSHA != *pr.Head.SHA {
 			log.Printf("INFO: next's SHA different from the PR number: %s SHA for %s/%s \n", num, r.Owner, r.Repo)
-			// TODO:
-			// comment on the PR
+			r.Queue.RemoveFirst()
+			// msg := "Current head different from accepted head"
+			msg := "msg 2"
+			comments.AddComment(ctx, client, r.Owner, r.Repo, num, msg)
 			continue
 		}
 
 		mergeable := actions.CheckMergeability(ctx, client, r.Owner, r.Repo, num, pr)
 		if !mergeable {
 			log.Printf("INFO: PR for %s/%s number: %v is not mergeable\n", r.Owner, r.Repo, num)
-			// TODO:
-			// Comment on the PR: merge conflict
+			r.Queue.RemoveFirst()
+			// msg := "Merge conflict!"
+			msg := "msg 3"
+			comments.AddComment(ctx, client, r.Owner, r.Repo, num, msg)
 			continue
 		}
 
