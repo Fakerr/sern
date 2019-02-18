@@ -28,11 +28,6 @@ func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEve
 	owner := *event.Repo.Owner.Login
 	repo := *event.Repo.Name
 
-	// For now, make the commands available only for the repo's owner.
-	if owner != *event.Comment.User.Login {
-		return fmt.Errorf("Only the repo's owner is able to run this command.")
-	}
-
 	log.Printf("INFO: processing %s/%s \n", owner, repo)
 
 	// Check whether or not the Issue Comment was made on a Pull Request.
@@ -48,6 +43,11 @@ func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEve
 	if !ok {
 		log.Println("INFO: aborting: not a sern command.")
 		return nil
+	}
+
+	// For now, make the commands available only for the repo's owner.
+	if owner != *event.Comment.User.Login {
+		return fmt.Errorf("Only the repo's owner is able to run this command.")
 	}
 
 	// Create an installation client.

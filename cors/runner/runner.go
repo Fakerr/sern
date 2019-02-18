@@ -150,7 +150,7 @@ func (r *Runner) getNextItem(ctx context.Context, client *github.Client) *queue.
 			log.Printf("INFO: next's SHA different from the PR number: %s SHA for %s/%s \n", num, r.Owner, r.Repo)
 			r.Queue.RemoveFirst()
 			// msg := "Current head different from accepted head"
-			msg := "msg 2"
+			msg := "msg 6"
 			comments.AddComment(ctx, client, r.Owner, r.Repo, num, msg)
 			continue
 		}

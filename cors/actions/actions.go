@@ -102,7 +102,7 @@ func ProceedMerging(ctx context.Context, client *github.Client, event *github.Ch
 	if activeSHA != *pr.Head.SHA {
 		log.Printf("INFO: activeSHA different from the PR number %s SHA for %s/%s \n", activeNumber, owner, repo)
 		// msg := "Current head" + *pr.Head.SHA + " different from accepted head " + activeSHA
-		msg := "msg 2"
+		msg := "msg 6"
 		comments.AddComment(ctx, client, owner, repo, activeNumber, msg)
 		return false, nil
 	}
