@@ -149,8 +149,7 @@ func (r *Runner) getNextItem(ctx context.Context, client *github.Client) *queue.
 		if next.HeadSHA != *pr.Head.SHA {
 			log.Printf("INFO: next's SHA different from the PR number: %s SHA for %s/%s \n", num, r.Owner, r.Repo)
 			r.Queue.RemoveFirst()
-			// msg := "Current head different from accepted head"
-			msg := "msg 6"
+			msg := "Current head" + *pr.Head.SHA + " different from accepted head " + next.HeadSHA
 			comments.AddComment(ctx, client, r.Owner, r.Repo, num, msg)
 			continue
 		}
@@ -159,8 +158,7 @@ func (r *Runner) getNextItem(ctx context.Context, client *github.Client) *queue.
 		if !mergeable {
 			log.Printf("INFO: PR for %s/%s number: %v is not mergeable\n", r.Owner, r.Repo, num)
 			r.Queue.RemoveFirst()
-			// msg := "Merge conflict!"
-			msg := "msg 3"
+			msg := "Merge conflict! please resolve"
 			comments.AddComment(ctx, client, r.Owner, r.Repo, num, msg)
 			continue
 		}

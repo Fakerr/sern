@@ -44,8 +44,7 @@ func CreateStagingBranch(ctx context.Context, client *github.Client, owner, repo
 		return nil, fmt.Errorf("client.Git.CreateRef() failed for %v with: %s\n", stagingName, err)
 	}
 
-	// msg := "Testing with upsteam..."
-	msg := "msg 4"
+	msg := "Testing with upsteam..."
 	comments.AddComment(ctx, client, owner, repo, prNumber, msg)
 
 	log.Println("INFO: staging branch successfully created!")
@@ -89,8 +88,7 @@ func ProceedMerging(ctx context.Context, client *github.Client, event *github.Ch
 	if conclusion := *event.CheckSuite.Conclusion; conclusion != "success" {
 		log.Println("INFO: conclusion different from 'success', could not merge the pull request")
 		// Comment on the PR + update the PR's labels
-		// msg := "Test failed"
-		msg := "msg 5"
+		msg := "Test failed"
 		comments.AddComment(ctx, client, owner, repo, activeNumber, msg)
 		return false, nil
 	}
@@ -101,8 +99,7 @@ func ProceedMerging(ctx context.Context, client *github.Client, event *github.Ch
 	// Make sure the PR's SHA is the same as the active PR's SHA before merging (in case someone committed smthg during the batch)
 	if activeSHA != *pr.Head.SHA {
 		log.Printf("INFO: activeSHA different from the PR number %s SHA for %s/%s \n", activeNumber, owner, repo)
-		// msg := "Current head" + *pr.Head.SHA + " different from accepted head " + activeSHA
-		msg := "msg 6"
+		msg := "Current head" + *pr.Head.SHA + " different from accepted head " + activeSHA
 		comments.AddComment(ctx, client, owner, repo, activeNumber, msg)
 		return false, nil
 	}
