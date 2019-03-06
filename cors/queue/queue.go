@@ -43,15 +43,13 @@ func (q *QueueMerge) Add(ctx context.Context, client *github.Client, owner, repo
 	for _, item := range q.QueueItems {
 		if item.Number == pr.Number {
 			log.Printf("WARN: Pull Request %v already queued", pr)
-			// msg := "PR number " + pr.Number + " already queued."
-			msg := "msg 1"
+			msg := "Pull request already in the merge queue."
 			comments.AddComment(ctx, client, owner, repo, pr.Number, msg)
 			return
 		}
 	}
 	q.QueueItems = append(q.QueueItems, pr)
-	// msg := "Pull request added in the merge queue."
-	msg := "msg 2"
+	msg := "Pull request added in the merge queue."
 	comments.AddComment(ctx, client, owner, repo, pr.Number, msg)
 	return
 }
