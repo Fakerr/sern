@@ -103,7 +103,7 @@ func (r *Runner) Next(ctx context.Context, client *github.Client) {
 	r.SetStatus("running")
 
 	// Create a staging branch using the pull request merge commit.
-	_, err := actions.CreateStagingBranch(ctx, client, r.Owner, r.Repo, r.Active.Number)
+	ref, err := actions.CreateStagingBranch(ctx, client, r.Owner, r.Repo, r.Active.Number)
 	if err != nil {
 		log.Printf("ERRO: [ CreateStagingBranch ] failed with %s\n", err)
 		log.Println("INFO: trying another item...")
@@ -113,6 +113,9 @@ func (r *Runner) Next(ctx context.Context, client *github.Client) {
 		r.Next(ctx, client)
 		return
 	}
+
+	// Update the activePR merge commit's SHA (the merge commmit sha change each time a new change is added into upstream)
+	r.Active.MergeCommitSHA = *ref.Object.SHA
 
 	r.Locked = false
 	return
