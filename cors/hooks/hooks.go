@@ -54,9 +54,15 @@ func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEve
 	client := client.GetInstallationClient(int(*event.Installation.ID))
 
 	if cmd == "test" {
-		pr, err := createPullRequest(ctx, client, owner, repo, event)
+		pr, ok, err := createPullRequest(ctx, client, owner, repo, event)
+
 		if err != nil {
 			return fmt.Errorf("[ createPullRequest ] failed with %s\n", err)
+		}
+
+		if !ok {
+			log.Println("INFO: PR's upstream branch different from master.")
+			return nil
 		}
 
 		// Get the current runner or create a new one if it doesn't exist
@@ -127,7 +133,8 @@ func parseComment(body string) (string, bool) {
 }
 
 // Create a new pull request ready to be queued.
-func createPullRequest(ctx context.Context, client *github.Client, owner, repo string, event *github.IssueCommentEvent) (*queue.PullRequest, error) {
+// If the pull request's upsteam branch is not master, ok will be set to false and the PR won't be queued.
+func createPullRequest(ctx context.Context, client *github.Client, owner, repo string, event *github.IssueCommentEvent) (*queue.PullRequest, bool, error) {
 
 	log.Println("INFO: start [ createPullRequest ]")
 	defer log.Println("INFO: end [ createPullRequest ]")
@@ -138,7 +145,11 @@ func createPullRequest(ctx context.Context, client *github.Client, owner, repo s
 	// Fetch PullRequest
 	pull, _, err := client.PullRequests.Get(ctx, owner, repo, number)
 	if err != nil {
-		return nil, fmt.Errorf("client.PullRequests.Get() failed for %s with: %s\n", fullName, err)
+		return nil, false, fmt.Errorf("client.PullRequests.Get() failed for %s with: %s\n", fullName, err)
+	}
+
+	if *pull.Base.Ref != "master" {
+		return nil, false, nil
 	}
 
 	pr := &queue.PullRequest{
@@ -146,5 +157,5 @@ func createPullRequest(ctx context.Context, client *github.Client, owner, repo s
 		HeadSHA:        *pull.Head.SHA,
 		MergeCommitSHA: *pull.MergeCommitSHA,
 	}
-	return pr, nil
+	return pr, true, nil
 }
