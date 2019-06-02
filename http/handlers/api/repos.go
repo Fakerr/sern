@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/Fakerr/sern/config"
-	"github.com/Fakerr/sern/cors/client"
+	"github.com/Fakerr/sern/core/client"
+	"github.com/Fakerr/sern/http/session"
 	"github.com/Fakerr/sern/persist"
-	"github.com/Fakerr/sern/server/session"
 
 	"github.com/google/go-github/github"
 	"github.com/gorilla/mux"

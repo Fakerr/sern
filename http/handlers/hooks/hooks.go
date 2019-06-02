@@ -6,7 +6,7 @@ import (
 	"reflect"
 
 	"github.com/Fakerr/sern/config"
-	"github.com/Fakerr/sern/cors/hooks"
+	"github.com/Fakerr/sern/core/hooks"
 
 	"github.com/google/go-github/github"
 )

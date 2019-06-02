@@ -8,8 +8,8 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/Fakerr/sern/config"
-	"github.com/Fakerr/sern/cors/client"
-	"github.com/Fakerr/sern/server/session"
+	"github.com/Fakerr/sern/core/client"
+	"github.com/Fakerr/sern/http/session"
 )
 
 // /github_oauth_cb. Called by github after authorization is granted

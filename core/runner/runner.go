@@ -4,9 +4,9 @@ import (
 	"context"
 	"log"
 
-	"github.com/Fakerr/sern/cors/actions"
-	"github.com/Fakerr/sern/cors/comments"
-	"github.com/Fakerr/sern/cors/queue"
+	"github.com/Fakerr/sern/core/actions"
+	"github.com/Fakerr/sern/core/comments"
+	"github.com/Fakerr/sern/core/queue"
 
 	"github.com/google/go-github/github"
 )

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/Fakerr/sern/config"
-	"github.com/Fakerr/sern/cors/comments"
-	"github.com/Fakerr/sern/cors/queue"
+	"github.com/Fakerr/sern/core/comments"
+	"github.com/Fakerr/sern/core/queue"
 
 	"github.com/google/go-github/github"
 )

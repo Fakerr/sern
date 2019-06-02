@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/Fakerr/sern/cors/comments"
+	"github.com/Fakerr/sern/core/comments"
 
 	"github.com/google/go-github/github"
 )

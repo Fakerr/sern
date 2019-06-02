@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Fakerr/sern/config"
-	"github.com/Fakerr/sern/server/session"
+	"github.com/Fakerr/sern/http/session"
 )
 
 // login handler

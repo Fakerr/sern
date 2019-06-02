@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Fakerr/sern/cors/runner"
+	"github.com/Fakerr/sern/core/runner"
 
 	"github.com/gorilla/mux"
 )

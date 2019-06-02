@@ -6,10 +6,10 @@ import (
 	"log"
 
 	"github.com/Fakerr/sern/config"
-	"github.com/Fakerr/sern/cors/actions"
-	"github.com/Fakerr/sern/cors/client"
-	"github.com/Fakerr/sern/cors/queue"
-	"github.com/Fakerr/sern/cors/runner"
+	"github.com/Fakerr/sern/core/actions"
+	"github.com/Fakerr/sern/core/client"
+	"github.com/Fakerr/sern/core/queue"
+	"github.com/Fakerr/sern/core/runner"
 
 	"github.com/google/go-github/github"
 )

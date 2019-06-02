@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Fakerr/sern/server/session"
+	"github.com/Fakerr/sern/http/session"
 )
 
 // Do not allow anonymous users to access the ressource
