@@ -5,6 +5,7 @@ import './App.css';
 function App() {
   return (
     <div className="App">
+      <a href="/logout">Logout</a>
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
