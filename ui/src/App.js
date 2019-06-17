@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Collapse, Layout } from 'antd';
+import { Tabs, Collapse, Layout, List, Button, Typography } from 'antd';
 import Navigation from './packages/navigation';
 import Queue from './packages/queue';
 import 'antd/dist/antd.css';
@@ -7,15 +7,14 @@ import './App.scss';
 
 const { Panel } = Collapse;
 const { Content, Sider } = Layout;
+const { TabPane } = Tabs;
 
 function callback(key) {
   console.log(key);
 }
 
 const text = `
-  A dog is a type of domesticated animal.
-  Known for its loyalty and faithfulness,
-  it can be found as a welcome guest in many households across the world.
+ No repository found
 `;
 
 const customPanelStyle = {
@@ -27,6 +26,11 @@ const node = (
     <p style={{ color: '#1890ff', textDecoration: 'underline', marginBottom: '0' }}>My Repositories</p>
 );
 
+const data = [
+  'fakerr/experiment2',
+  'fakerr/sern'
+];
+
 
 export default class App extends Component {
   render() {
@@ -36,17 +40,33 @@ export default class App extends Component {
           <Navigation></Navigation>
         </div> 
         <div className="box content">
+          <Button style={{ margin: '7px'}} type="dashed">Add / Remove repositories</Button>
           <Layout>
-            <Sider width={230} style={{ background: '#f0f2f5' }}>
+            <Sider width={260} style={{ background: '#f0f2f5' }}>
               <Collapse defaultActiveKey={['1']} onChange={callback} style={{ borderRadius: '0' }}>
                 <Panel header={node} key="1" style={customPanelStyle}>
-                  <p>{text}</p>
+	          <List
+                    bordered
+                    dataSource={data}
+                    renderItem={item => (
+                    <List.Item>
+			<Typography.Text strong>{item}</Typography.Text>
+                    </List.Item>
+		    )}
+	          />
                 </Panel>
               </Collapse>
             </Sider>
-            <Layout style={{ padding: '0 5px 10px' }}>
+            <Layout style={{ padding: '0 20px 10px' }}>
               <Content>
-                <Queue></Queue>
+	        <Tabs defaultActiveKey="1" onChange={callback}>
+	          <TabPane tab="Merge Queue" key="1">
+                    <Queue></Queue>
+                  </TabPane>
+                  <TabPane tab="Settings" key="2">
+	            Content of settings
+                  </TabPane>
+	        </Tabs>
               </Content>
             </Layout>
           </Layout>

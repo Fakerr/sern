@@ -13,7 +13,7 @@ export default class Navigation extends Component {
       <div>
         <Header style={{ padding: '0px', height: '49px' }}>
           <div className="logo">
-	    Sern
+	    sern
 	  </div>
           <Menu mode="horizontal" defaultSelectedKeys={['1']} >
             <Menu.Item key="1">Dashboard</Menu.Item>
