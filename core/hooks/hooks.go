@@ -10,6 +10,7 @@ import (
 	"github.com/Fakerr/sern/core/client"
 	"github.com/Fakerr/sern/core/queue"
 	"github.com/Fakerr/sern/core/runner"
+	"github.com/Fakerr/sern/persist"
 
 	"github.com/google/go-github/github"
 )
@@ -120,6 +121,41 @@ func ProcessCheckSuiteEvent(ctx context.Context, event *github.CheckSuiteEvent) 
 	// Regardless the previous item succeed to merge or not, proceed to the next item
 	runner.RemoveActive()
 	runner.Next(ctx, client)
+
+	return nil
+}
+
+// Handler for Installation event
+func ProcessInstallationEvent(ctx context.Context, event *github.InstallationEvent) error {
+
+	log.Println("INFO: start [ ProcessInstallationEvent ]")
+	defer log.Println("INFO: end [ ProcessInstallationEvent ]")
+
+	if *event.Action == "created" {
+		for _, item := range event.Repositories {
+			// Create the repository and presist it in the db.
+			repository := &persist.Repository{
+				InstallationID: *event.Installation.ID,
+				FullName:       *item.FullName,
+				Owner:          *event.Sender.Login,
+				Private:        *item.Private,
+			}
+
+			// Enable repository (Persist in the db).
+			err := persist.AddRepository(repository)
+
+			if err != nil {
+				return fmt.Errorf("[ persist.AddRepository ] failed with %s\n", err)
+			}
+		}
+	}
+
+	if *event.Action == "deleted" {
+		err := persist.RemoveRepository(*event.Installation.ID)
+		if err != nil {
+			return fmt.Errorf("[ persist.RemoveRepository ] failed with %s\n", err)
+		}
+	}
 
 	return nil
 }

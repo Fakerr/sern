@@ -48,6 +48,24 @@ func WebhookCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusOK)
 		return
+	case *github.InstallationEvent:
+		err := hooks.ProcessInstallationEvent(ctx, event)
+
+		if err != nil {
+			log.Printf("ERRO: [ ProcessInstallationEvent ] failed with: %s\n", err)
+		}
+
+		w.WriteHeader(http.StatusOK)
+		return
+	//case *github.InstallationRepositoriesEvent:
+	//	err := hooks.ProcessInstallationRepositoriesEvent(ctx, event)
+
+	//	if err != nil {
+	//		log.Printf("ERRO: [ InstallationRepositoriesEvent ] failed with: %s\n", err)
+	//	}
+
+	//	w.WriteHeader(http.StatusOK)
+	//	return
 	default:
 		w.WriteHeader(http.StatusOK)
 		log.Printf("WARN: Unsupported type events %v\n", reflect.TypeOf(event))

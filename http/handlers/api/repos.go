@@ -70,9 +70,9 @@ func EnableRepository(w http.ResponseWriter, r *http.Request) {
 
 	// Create the repository and presist it if it doesn't exist in the db.
 	repository := &persist.Repository{
-		Name:    fullRepo,
-		Owner:   userLogin,
-		Enabled: true,
+		FullName: fullRepo,
+		Owner:    userLogin,
+		Private:  false,
 	}
 
 	// Enable repository (Persist in the db).

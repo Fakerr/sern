@@ -8,22 +8,31 @@ import (
 var enabledRepositories []*Repository
 
 type Repository struct {
-	Name  string
-	Owner string
-	// The first time the user enable a repo, it should be presisted with its config.
-	// Later the user can disable the repo but its config is still saved.
-	Enabled bool
+	InstallationID int64
+	FullName       string
+	Owner          string
+	Private        bool
 }
 
 // Add a repository in the db.
 func AddRepository(repo *Repository) error {
 	// TEMP: simulate the db persistence. (will be added to Postgre later)
-	enabledRepositories := append(enabledRepositories, repo)
+	enabledRepositories = append(enabledRepositories, repo)
+
 	log.Printf("Enabled repos %s\n", enabledRepositories)
 	return nil
 }
 
 // Remove a repository from the db.
-func RemoveRepository(repoID string) {
+func RemoveRepository(id int64) error {
+	var tmp_repos []*Repository
+	for _, elt := range enabledRepositories {
+		if elt.InstallationID != id {
+			tmp_repos = append(tmp_repos, elt)
+		}
+	}
+	enabledRepositories := tmp_repos
 
+	log.Printf("Enabled repos %s\n", enabledRepositories)
+	return nil
 }
