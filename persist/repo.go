@@ -24,14 +24,28 @@ func AddRepository(repo *Repository) error {
 }
 
 // Remove a repository from the db.
-func RemoveRepository(id int64) error {
+func RemoveRepositoryByInstallationId(id int64) error {
 	var tmp_repos []*Repository
 	for _, elt := range enabledRepositories {
 		if elt.InstallationID != id {
 			tmp_repos = append(tmp_repos, elt)
 		}
 	}
-	enabledRepositories := tmp_repos
+	enabledRepositories = tmp_repos
+
+	log.Printf("Enabled repos %s\n", enabledRepositories)
+	return nil
+}
+
+// Remove a repository from the db.
+func RemoveRepositoryByName(name string) error {
+	var tmp_repos []*Repository
+	for _, elt := range enabledRepositories {
+		if elt.FullName != name {
+			tmp_repos = append(tmp_repos, elt)
+		}
+	}
+	enabledRepositories = tmp_repos
 
 	log.Printf("Enabled repos %s\n", enabledRepositories)
 	return nil

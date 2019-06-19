@@ -151,9 +151,46 @@ func ProcessInstallationEvent(ctx context.Context, event *github.InstallationEve
 	}
 
 	if *event.Action == "deleted" {
-		err := persist.RemoveRepository(*event.Installation.ID)
+		err := persist.RemoveRepositoryByInstallationId(*event.Installation.ID)
 		if err != nil {
-			return fmt.Errorf("[ persist.RemoveRepository ] failed with %s\n", err)
+			return fmt.Errorf("[ persist.RemoveRepositoryByInstallationId ] failed with %s\n", err)
+		}
+	}
+
+	return nil
+}
+
+// Handler for InstallationRepositories event
+func ProcessInstallationRepositoriesEvent(ctx context.Context, event *github.InstallationRepositoriesEvent) error {
+
+	log.Println("INFO: start [ ProcessInstallationRepositoriesEvent ]")
+	defer log.Println("INFO: end [ ProcessInstallationRepositoriesEvent ]")
+
+	if *event.Action == "added" {
+		for _, item := range event.RepositoriesAdded {
+			// Create the repository and presist it in the db.
+			repository := &persist.Repository{
+				InstallationID: *event.Installation.ID,
+				FullName:       *item.FullName,
+				Owner:          *event.Sender.Login,
+				Private:        *item.Private,
+			}
+
+			// Enable repository (Persist in the db).
+			err := persist.AddRepository(repository)
+
+			if err != nil {
+				return fmt.Errorf("[ persist.AddRepository ] failed with %s\n", err)
+			}
+		}
+	}
+
+	if *event.Action == "removed" {
+		for _, item := range event.RepositoriesRemoved {
+			err := persist.RemoveRepositoryByName(*item.FullName)
+			if err != nil {
+				return fmt.Errorf("[ persist.RemoveRepositoryByName ] failed with %s\n", err)
+			}
 		}
 	}
 
