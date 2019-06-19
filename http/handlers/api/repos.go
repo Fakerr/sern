@@ -14,8 +14,29 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Fetch and return user's repositories
+// return the user's repositories list
+func GetRepositoriesList(w http.ResponseWriter, r *http.Request) {
+
+	sess := session.Instance(r)
+	user := sess.Values["login"].(string)
+
+	repos := persist.GetRepositoriesByOwner(user)
+
+	// Extract the repos' name
+	var parsedRepos []string
+	for _, repo := range repos {
+		parsedRepos = append(parsedRepos, repo.FullName)
+	}
+
+	js, _ := json.Marshal(parsedRepos)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
+}
+
+// TODO remove
 func RepositoriesList(w http.ResponseWriter, r *http.Request) {
+
 	client := github.NewClient(nil)
 
 	user := mux.Vars(r)["user"]
