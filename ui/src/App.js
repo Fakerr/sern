@@ -59,6 +59,9 @@ export default class App extends Component {
             </Sider>
             <Layout style={{ padding: '0 20px 10px' }}>
               <Content>
+                <h1 className="repo-name">
+	          Fakerr / experiment2
+                </h1>
 	        <Tabs defaultActiveKey="1" onChange={callback}>
 	          <TabPane tab="Merge Queue" key="1">
                     <Queue></Queue>
