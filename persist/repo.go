@@ -15,6 +15,15 @@ type Repository struct {
 	MergeType      string // Can be either empty, "squash" or "rebase"
 }
 
+func GetRepositoryByName(name string) *Repository {
+	for _, elt := range EnabledRepositories {
+		if elt.FullName == name {
+			return elt
+		}
+	}
+	return nil
+}
+
 func GetRepositoriesByOwner(owner string) (repos []*Repository) {
 	for _, elt := range EnabledRepositories {
 		if elt.Owner == owner {
@@ -22,6 +31,15 @@ func GetRepositoriesByOwner(owner string) (repos []*Repository) {
 		}
 	}
 	return
+}
+
+// Return true if the repository is a private repository
+func IsPrivate(name string) bool {
+	repo := GetRepositoryByName(name)
+	if repo != nil {
+		return repo.Private
+	}
+	return false
 }
 
 // Add a repository in the db.

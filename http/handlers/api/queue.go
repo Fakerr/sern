@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/Fakerr/sern/core/runner"
+	"github.com/Fakerr/sern/http/session"
+	"github.com/Fakerr/sern/persist"
 
 	"github.com/gorilla/mux"
 )
@@ -14,6 +16,27 @@ func GetQueue(w http.ResponseWriter, r *http.Request) {
 
 	owner := mux.Vars(r)["owner"]
 	repo := mux.Vars(r)["repo"]
+
+	// Check whether or not the repository exist
+	if repo := persist.GetRepositoryByName(owner + "/" + repo); repo == nil {
+		http.Error(w, "404 not found", http.StatusNotFound)
+		return
+	}
+
+	private := persist.IsPrivate(owner + "/" + repo)
+	if private == true {
+		if auth := session.IsAuthenticated(r); auth == false {
+			http.Error(w, "404 not found", http.StatusNotFound)
+			return
+		}
+
+		sess := session.Instance(r)
+		login := sess.Values["login"].(string)
+		if login != owner {
+			http.Error(w, "404 not found", http.StatusNotFound)
+			return
+		}
+	}
 
 	// Get the Repo's runner
 	runner := runner.GetSoftRunner(owner, repo)
