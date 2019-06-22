@@ -3,10 +3,6 @@ import { Collapse, List, Typography } from 'antd';
 
 const { Panel } = Collapse;
 
-const text = `
- No repository found
-`;
-
 const node = (
     <p style={{ color: '#1890ff', textDecoration: 'underline', marginBottom: '0' }}>My Repositories</p>
 );
