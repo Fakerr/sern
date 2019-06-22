@@ -23,7 +23,9 @@ func GetRepositoriesList(w http.ResponseWriter, r *http.Request) {
 	repos := persist.GetRepositoriesByOwner(user)
 
 	// Extract the repos' name
-	var parsedRepos []string
+	// using make([]string, 0) instead of var parsedRepos []string to handle the case of empty reposonse
+	// explanation: https://www.danott.co/posts/json-marshalling-empty-slices-to-empty-arrays-in-go.html
+	parsedRepos := make([]string, 0)
 	for _, repo := range repos {
 		parsedRepos = append(parsedRepos, repo.FullName)
 	}

@@ -11,11 +11,6 @@ const node = (
     <p style={{ color: '#1890ff', textDecoration: 'underline', marginBottom: '0' }}>My Repositories</p>
 );
 
-const data = [
-  'fakerr/experiment2',
-  'fakerr/sern'
-];
-
 const customPanelStyle = {
   background: '#f7f7f7',
   color: 'green'
@@ -23,15 +18,28 @@ const customPanelStyle = {
 
 export default class RepoList extends Component {
 
-  render() {
+  constructor(props) {
+    super(props);
 
+    this.state = {
+      data: []
+    };
+  }
+
+  componentDidMount() {
+    fetch('/api/repos')
+      .then(response => response.json())
+      .then(data => this.setState({ data }));
+  }
+
+  render() {
     return (
       <div>
         <Collapse defaultActiveKey={['1']} style={{ borderRadius: '0' }}>
           <Panel header={node} key="1" style={customPanelStyle}>
 	    <List
               bordered
-              dataSource={data}
+              dataSource={this.state.data}
               renderItem={item => (
 		<List.Item>
 		  <Typography.Text strong>{item}</Typography.Text>
