@@ -4,11 +4,14 @@ import { Table, Tag } from 'antd';
 
 function getStatus(status) {
   let color = 'green';
-  if (status === 'pause') {
+  if (status === 'paused') {
     color = 'volcano';
   }
   if (status === 'running') {
     color = 'green';
+  }
+  if (status === 'wait') {
+    color = 'yellow';
   }
   return (
     <Tag color={color} key={status}>
@@ -51,7 +54,7 @@ const data = [
     repo: 'fakerr/experiment2',
     active: '#4674',
     queue: '#4674 #46546 #7897 #1325',
-    status: 'running',
+    status: 'wait', // either running, paused or wait(pending)
   }
 ];
 
