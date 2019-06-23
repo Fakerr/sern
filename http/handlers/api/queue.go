@@ -52,6 +52,8 @@ func GetQueue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	queue := runner.Queue.QueueItems
+	active := runner.Active.Number
+	status := runner.Status
 
 	// return only the PR's number
 	var parsedPRs []int
@@ -59,7 +61,13 @@ func GetQueue(w http.ResponseWriter, r *http.Request) {
 		parsedPRs = append(parsedPRs, item.Number)
 	}
 
-	js, _ := json.Marshal(parsedPRs)
+	res := &QueueResponse{
+		Queue:  parsedPRs,
+		Active: active,
+		Status: status,
+	}
+
+	js, _ := json.Marshal(res)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(js)
