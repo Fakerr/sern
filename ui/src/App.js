@@ -14,6 +14,16 @@ function callback(key) {
 }
 
 export default class App extends Component {
+
+  constructor(props) {
+    super(props);
+    this.child = React.createRef();
+  }
+
+  onClick = () => {
+    this.child.current.refreshQueue();
+  };
+
   render() {
     return (
       <div className="wrapper">
@@ -31,9 +41,9 @@ export default class App extends Component {
                 <h1 className="repo-name">
 	          Fakerr / experiment2
                 </h1>
-	        <Tabs defaultActiveKey="1" onChange={callback}>
+	        <Tabs defaultActiveKey="1" onChange={callback} tabBarExtraContent={<Button onClick={this.onClick}>Refresh Queue</Button>}>
 	          <TabPane tab="Merge Queue" key="1">
-                    <Queue></Queue>
+                    <Queue ref={this.child}></Queue>
                   </TabPane>
                   <TabPane tab="Settings" key="2">
 	            Content of settings

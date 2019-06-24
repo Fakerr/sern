@@ -3,10 +3,10 @@ import { Table, Tag } from 'antd';
 
 
 function getStatus(status) {
-  let color = 'green';
-  if (status === 'paused') {
-    color = 'volcano';
-  }
+  let color = 'yellow';
+  //if (status === 'paused') {
+  //  color = 'volcano';
+  //}
   if (status === 'running') {
     color = 'green';
   }
@@ -48,22 +48,52 @@ const columns = [
   }
 ];
 
-const data = [
-  {
-    key: '1',
-    repo: 'fakerr/experiment2',
-    active: '#4674',
-    queue: '#4674 #46546 #7897 #1325',
-    status: 'wait', // either running, paused or wait(pending)
-  }
-];
-
 export default class PRTable extends Component {
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      repo: 'Fakerr/experiment2',
+      loading: true,
+      data: []
+    };
+  }
+
+  refreshQueue() {
+    this.getData();
+  }
+
+  componentDidMount() {
+    this.getData();
+  }
+
+  getData = () => {
+    this.setState({ loading: true })
+    fetch('/api/' + this.state.repo + '/queue')
+      .then(response => response.json())
+      .then(data => {
+	const res = {
+	  key: '1',
+	  repo: this.state.repo,
+	  status: 'wait'
+	}
+	if (data) {
+	  res.active = '#' + data.Active;
+	  res.status = data.Status;
+	  res.queue = data.Queue.map(el => {
+	    return '#' + el;
+	  }).join(' ');
+	  
+	}
+	this.setState({ data: [res], loading: false })
+      });
+  };
 
   render() {
 
     return (
-	<Table columns={columns} dataSource={data} pagination={false} style={{ backgroundColor: '#FFFFFF' }} />
+	<Table loading={this.state.loading} columns={columns} dataSource={this.state.data} pagination={false} style={{ backgroundColor: '#FFFFFF' }} />
     );
   }
 }
