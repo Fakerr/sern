@@ -139,6 +139,7 @@ func mergePullRequest(ctx context.Context, client *github.Client, owner, repo st
 }
 
 // Check whether or not a PR is still meargeable
+// After each merge in the upsteam branch, the PR's mergeability is evaluated again, so this case happens often.
 func CheckMergeability(ctx context.Context, client *github.Client, owner, repo string, num int, pr *github.PullRequest) bool {
 
 	log.Printf("INFO: start checking mergeability for %s/%s number: %v\n", owner, repo, num)
