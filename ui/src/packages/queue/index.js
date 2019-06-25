@@ -54,8 +54,8 @@ export default class PRTable extends Component {
     super(props);
 
     this.state = {
-      repo: 'Fakerr/experiment2',
-      loading: true,
+      repo: this.props.repo,
+      loading: false,
       data: []
     };
   }
@@ -65,7 +65,15 @@ export default class PRTable extends Component {
   }
 
   componentDidMount() {
-    this.getData();
+    if (this.state.repo) {
+      this.getData();
+    }
+  }
+
+  componentWillReceiveProps({repo}) {
+    this.setState({...this.state,repo}, () => {
+      this.getData(); //why not use componentDidUpdate ?
+    });
   }
 
   getData = () => {
@@ -87,6 +95,9 @@ export default class PRTable extends Component {
 	  
 	}
 	this.setState({ data: [res], loading: false })
+      }).catch(err =>{
+	this.setState({ loading: false });
+	alert("Internal error");
       });
   };
 

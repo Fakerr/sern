@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Tabs, Layout, Button } from 'antd';
 import Navigation from './packages/navigation';
 import RepoList from './packages/repositories';
-import Queue from './packages/queue';
+import PRTable from './packages/queue';
 import 'antd/dist/antd.css';
 import './App.scss';
 
@@ -18,11 +18,21 @@ export default class App extends Component {
   constructor(props) {
     super(props);
     this.child = React.createRef();
+
+    this.state = {
+      title: '',
+      selectedItem: null
+    };
   }
 
-  onClick = () => {
+  refresh = () => {
     this.child.current.refreshQueue();
-  };
+  }
+
+  selectItem = (ev) => {
+    this.setState({ selectedItem: ev.currentTarget.value, title: ev.currentTarget.value });
+    console.log('Selected repository: ' + ev.currentTarget.value);
+  }
 
   render() {
     return (
@@ -34,16 +44,19 @@ export default class App extends Component {
           <Button style={{ margin: '7px'}} type="dashed">Add / Remove repositories</Button>
           <Layout>
             <Sider width={260} style={{ background: '#f0f2f5' }}>
-              <RepoList></RepoList>
+              <RepoList selectItem={this.selectItem}></RepoList>
             </Sider>
             <Layout style={{ padding: '0 20px 10px' }}>
               <Content>
                 <h1 className="repo-name">
-	          Fakerr / experiment2
+	          {this.state.title}
                 </h1>
-	        <Tabs defaultActiveKey="1" onChange={callback} tabBarExtraContent={<Button onClick={this.onClick}>Refresh Queue</Button>}>
+	        <Tabs defaultActiveKey="1"
+		      onChange={callback}
+		      tabBarExtraContent={<Button disabled={this.state.selectedItem == null}
+						  onClick={this.refresh}>Refresh Queue</Button>}>
 	          <TabPane tab="Merge Queue" key="1">
-                    <Queue ref={this.child}></Queue>
+                    <PRTable repo={this.state.selectedItem} ref={this.child}></PRTable>
                   </TabPane>
                   <TabPane tab="Settings" key="2">
 	            Content of settings

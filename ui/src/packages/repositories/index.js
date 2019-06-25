@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Collapse, List, Typography } from 'antd';
+import { Collapse, List, Button } from 'antd';
 
 const { Panel } = Collapse;
 
@@ -16,7 +16,6 @@ export default class RepoList extends Component {
 
   constructor(props) {
     super(props);
-
     this.state = {
       data: []
     };
@@ -35,16 +34,19 @@ export default class RepoList extends Component {
           <Panel header={node} key="1" style={customPanelStyle}>
 	    <List
               bordered
+	      size='small'
               dataSource={this.state.data}
               renderItem={item => (
 		<List.Item>
-		  <Typography.Text strong>{item}</Typography.Text>
+		  <Button value={item} type="link" size={'large'} onClick={this.props.selectItem}>
+		    {item}
+		  </Button>
 		</List.Item>
 	      )}
 	    />
           </Panel>
         </Collapse>
-      </div >
+      </div>
     );
   }
 }
