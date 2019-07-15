@@ -47,7 +47,6 @@ func GithubCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	sess.Values["id"] = user.ID
 	sess.Values["login"] = user.Login
 	sess.Values["userName"] = user.Name
-	sess.Values["accessToken"] = token.AccessToken
 	sess.Save(r, w)
 
 	log.Printf("Logged in as GitHub user: %s\n", *user.Login)

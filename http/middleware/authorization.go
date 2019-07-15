@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"log"
 	"net/http"
 
@@ -21,12 +20,7 @@ func WithAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		// Extend context with the user's token (Am I using this ?)
-		if token, ok := sess.Values["accessToken"]; ok {
-			log.Printf("INFO: Authenticated user %s\n", sess.Values["login"])
-			ctx := context.WithValue(r.Context(), "token", token)
-			r = r.WithContext(ctx)
-		}
+		log.Printf("INFO: Authenticated user %s\n", sess.Values["login"])
 
 		next.ServeHTTP(w, r)
 	})

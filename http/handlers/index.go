@@ -13,7 +13,8 @@ var templates = template.Must(template.ParseFiles("public/home.html", "ui/build/
 func MainHandler(w http.ResponseWriter, r *http.Request) {
 	sess := session.Instance(r)
 
-	if sess.IsNew == true {
+	// Check whether this is a new session or the user is not authenticated.
+	if sess.IsNew == true || sess.Values["id"] == nil {
 		templates.ExecuteTemplate(w, "home.html", nil)
 		return
 	}
