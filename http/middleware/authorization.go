@@ -20,8 +20,6 @@ func WithAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		log.Printf("INFO: Authenticated user %s\n", sess.Values["login"])
-
 		next.ServeHTTP(w, r)
 	})
 }
