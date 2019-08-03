@@ -68,8 +68,11 @@ func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEve
 
 		// Get the current runner or create a new one if it doesn't exist
 		runner := runner.GetRunner(owner, repo)
-		runner.Queue.Add(ctx, client, owner, repo, pr)
-		runner.Next(ctx, client)
+		if runner != nil {
+			runner.Queue.Add(ctx, client, owner, repo, pr)
+			runner.Update()
+			runner.Next(ctx, client)
+		}
 	}
 
 	return nil
@@ -102,6 +105,9 @@ func ProcessCheckSuiteEvent(ctx context.Context, event *github.CheckSuiteEvent) 
 
 	// Get the runner instance
 	runner := runner.GetRunner(owner, repo)
+	if runner == nil {
+		return nil
+	}
 	activePR := runner.Active
 
 	// Make sure the event's commit hash is the same as the active PR's merge commit hash.
@@ -120,6 +126,7 @@ func ProcessCheckSuiteEvent(ctx context.Context, event *github.CheckSuiteEvent) 
 
 	// Regardless the previous item succeed to merge or not, proceed to the next item
 	runner.RemoveActive()
+	runner.Update()
 	runner.Next(ctx, client)
 
 	return nil

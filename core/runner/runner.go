@@ -2,60 +2,18 @@ package runner
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/Fakerr/sern/core/actions"
 	"github.com/Fakerr/sern/core/comments"
 	"github.com/Fakerr/sern/core/queue"
+	"github.com/Fakerr/sern/persist"
 
+	"github.com/gomodule/redigo/redis"
 	"github.com/google/go-github/github"
 )
-
-// A map with a all enabled repositories and their current runner. Should be presisted (redis).
-var ReposRunner map[string]*Runner
-
-func InitRunners() {
-	ReposRunner = make(map[string]*Runner)
-}
-
-// If it exists, return the owner/repo's runner, otherwise create a new one.
-// If no items left, the runner should be destroyed
-func GetRunner(owner, repo string) *Runner {
-	name := owner + "/" + repo
-
-	if ReposRunner[name] != nil {
-		return ReposRunner[name]
-	}
-
-	runner := &Runner{
-		Owner:  owner,
-		Repo:   repo,
-		Status: "inactive", // running or inactive
-		Locked: false,
-		Active: nil,
-		Queue:  &queue.QueueMerge{},
-	}
-	initQueue := make([]*queue.PullRequest, 0)
-	runner.Queue.Init(initQueue)
-
-	// Add the new runner in the Global runners store
-	ReposRunner[name] = runner
-	log.Printf("INFO: A new runner for %s has been created!\n", name)
-
-	return runner
-}
-
-// Get the runner without creating a new one if it doesn't exist
-func GetSoftRunner(owner, repo string) *Runner {
-	name := owner + "/" + repo
-
-	runner, ok := ReposRunner[name]
-	if ok {
-		return runner
-	}
-
-	return nil
-}
 
 type Runner struct {
 	Owner  string
@@ -68,6 +26,14 @@ type Runner struct {
 
 func (r *Runner) SetStatus(status string) {
 	r.Status = status
+}
+
+// update runner in database
+func (r *Runner) Update() {
+	err := setRunner(r)
+	if err != nil {
+		log.Printf("ERRO: [ update ] failed with %s\n", err)
+	}
 }
 
 func (r *Runner) RemoveActive() {
@@ -89,13 +55,20 @@ func (r *Runner) Next(ctx context.Context, client *github.Client) {
 	}
 
 	r.Locked = true
+
+	// updating the runner in db after the lock to prevent any concurrent transaction
+	r.Update()
+
 	nextItem := r.getNextItem(ctx, client)
 
 	// If no item left in the queue, destroy the runner
 	if nextItem == nil {
 		name := r.Owner + "/" + r.Repo
 		log.Printf("INFO: no items left in the queue for %s, deleting the runner...\n", name)
-		delete(ReposRunner, name)
+		err := deleteRunner(name)
+		if err != nil {
+			log.Printf("ERRO: [ deleteRunner ] for %s . Failed with %s\n", name, err)
+		}
 		return
 	}
 
@@ -108,16 +81,18 @@ func (r *Runner) Next(ctx context.Context, client *github.Client) {
 		log.Printf("ERRO: [ CreateStagingBranch ] failed with %s\n", err)
 		log.Println("INFO: trying another item...")
 
-		r.Locked = false
 		r.RemoveActive()
+		r.Locked = false
+		r.Update()
 		r.Next(ctx, client)
 		return
 	}
 
 	// Update the activePR merge commit's SHA (the merge commmit sha change each time a new change is added into upstream)
 	r.Active.MergeCommitSHA = *ref.Object.SHA
-
 	r.Locked = false
+	r.Update()
+
 	return
 }
 
@@ -171,4 +146,114 @@ func (r *Runner) getNextItem(ctx context.Context, client *github.Client) *queue.
 
 		return next
 	}
+}
+
+// If it exists, return the owner/repo's runner, otherwise create a new one.
+// If no items left, the runner should be destroyed
+func GetRunner(owner, repo string) *Runner {
+	name := owner + "/" + repo
+
+	runner, err := getRunnerFromdb(name)
+	if err != nil {
+		log.Printf("ERRO: [ getRunnerFromdb ] failed with %s\n", err)
+		return nil
+	}
+	if runner != nil {
+		return runner
+	}
+
+	runner = &Runner{
+		Owner:  owner,
+		Repo:   repo,
+		Status: "inactive", // running or inactive
+		Locked: false,
+		Active: nil,
+		Queue:  &queue.QueueMerge{},
+	}
+
+	initQueue := make([]*queue.PullRequest, 0)
+	runner.Queue.Init(initQueue)
+
+	// Persist the new runner in database
+	err = setRunner(runner)
+	if err != nil {
+		log.Printf("ERRO: [ setRunner ] failed with %s\n", err)
+		return nil
+	}
+
+	log.Printf("INFO: A new runner for %s has been created!\n", name)
+
+	return runner
+}
+
+// Get the runner without creating a new one if it doesn't exist
+func GetSoftRunner(owner, repo string) *Runner {
+	name := owner + "/" + repo
+
+	runner, err := getRunnerFromdb(name)
+	if err != nil {
+		log.Printf("ERRO: [ getRunnerFromdb ] failed with %s\n", err)
+		return nil
+	}
+	if runner != nil {
+		return runner
+	}
+
+	return nil
+}
+
+// Persist runner in the redis db
+func setRunner(runner *Runner) error {
+
+	conn := persist.Pool.Get()
+	defer conn.Close()
+
+	var key string = runner.Owner + "/" + runner.Repo
+
+	// serialize object to JSON
+	json, err := json.Marshal(runner)
+	if err != nil {
+		return err
+	}
+
+	// SET object
+	_, err = conn.Do("SET", key, json)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Get runner from redis
+func getRunnerFromdb(key string) (*Runner, error) {
+
+	conn := persist.Pool.Get()
+	defer conn.Close()
+
+	s, err := redis.String(conn.Do("GET", key))
+
+	if err == redis.ErrNil {
+		fmt.Printf("Runner %s does not exist", key)
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	runner := Runner{}
+	err = json.Unmarshal([]byte(s), &runner)
+
+	fmt.Printf("%+v\n", runner)
+
+	return &runner, nil
+}
+
+// delete runner from redis
+func deleteRunner(key string) error {
+
+	conn := persist.Pool.Get()
+	defer conn.Close()
+
+	_, err := conn.Do("DEL", key)
+	return err
 }
