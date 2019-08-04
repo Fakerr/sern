@@ -149,8 +149,8 @@ func CheckMergeability(ctx context.Context, client *github.Client, owner, repo s
 	if mergeable == nil {
 		// If the value is nil, then GitHub has started a background job to compute the mergeability and it's not complete yet.
 		// Sleep 5 seconds and try again
-		log.Printf("INFO: merageability info not yet ready for %s/%s number: %v, sleeping for 5 seconds...\n", owner, repo, num)
-		time.Sleep(5 * time.Second)
+		log.Printf("INFO: merageability info not yet ready for %s/%s number: %v, sleeping for 10 seconds...\n", owner, repo, num)
+		time.Sleep(10 * time.Second)
 
 		pr, _, err := client.PullRequests.Get(ctx, owner, repo, num)
 		if err != nil {
