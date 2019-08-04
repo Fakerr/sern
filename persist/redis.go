@@ -24,7 +24,7 @@ func NewPool() *redis.Pool {
 		// configuring a connection.
 		Dial: func() (redis.Conn, error) {
 			// If prod env, use DialUrl with the corresponding url
-			if config.REDIS_URI == "" {
+			if config.REDIS_URI != "" {
 
 				log.Println("INFO: REDIS URI")
 

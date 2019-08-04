@@ -3,7 +3,6 @@ package runner
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 
 	"github.com/Fakerr/sern/core/actions"
@@ -234,7 +233,7 @@ func getRunnerFromdb(key string) (*Runner, error) {
 	s, err := redis.String(conn.Do("GET", key))
 
 	if err == redis.ErrNil {
-		fmt.Printf("Runner %s does not exist", key)
+		log.Printf("INFO: Runner %s does not exist", key)
 		return nil, nil
 	} else if err != nil {
 		return nil, err
@@ -242,8 +241,6 @@ func getRunnerFromdb(key string) (*Runner, error) {
 
 	runner := Runner{}
 	err = json.Unmarshal([]byte(s), &runner)
-
-	fmt.Printf("%+v\n", runner)
 
 	return &runner, nil
 }
