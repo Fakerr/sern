@@ -233,7 +233,7 @@ func getRunnerFromdb(key string) (*Runner, error) {
 	s, err := redis.String(conn.Do("GET", key))
 
 	if err == redis.ErrNil {
-		log.Printf("INFO: Runner %s does not exist", key)
+		log.Printf("INFO: Runner %s does not exist\n", key)
 		return nil, nil
 	} else if err != nil {
 		return nil, err
