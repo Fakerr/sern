@@ -67,7 +67,7 @@ export default class App extends Component {
           </Layout>
         </div>
         <div className="box footer">
-          <p><a href="http://predictix.com">&copy; Infor 2018</a></p>
+          <p><a href="http://predictix.com">&copy; Sern 2018</a></p>
         </div>
       </div>
     );
