@@ -28,7 +28,7 @@ func GetInstallationClient(installationID int) *github.Client {
 	tr := http.DefaultTransport
 
 	// Wrap the shared transport for use with the integration ID authenticating with installation ID.
-	itr, err := ghinstallation.NewKeyFromFile(tr, config.IntegrationID, installationID, config.PrivateKeyFile)
+	itr, err := ghinstallation.NewKeyFromFile(tr, int64(config.IntegrationID), int64(installationID), config.PrivateKeyFile)
 	if err != nil {
 		log.Fatal(err)
 	}
