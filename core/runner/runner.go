@@ -204,7 +204,7 @@ func GetSoftRunner(owner, repo string) *Runner {
 // Persist runner in the redis db
 func setRunner(runner *Runner) error {
 
-	conn := persist.Pool.Get()
+	conn := persist.GetRedisPool().Get()
 	defer conn.Close()
 
 	var key string = runner.Owner + "/" + runner.Repo
@@ -227,7 +227,7 @@ func setRunner(runner *Runner) error {
 // Get runner from redis
 func getRunnerFromdb(key string) (*Runner, error) {
 
-	conn := persist.Pool.Get()
+	conn := persist.GetRedisPool().Get()
 	defer conn.Close()
 
 	s, err := redis.String(conn.Do("GET", key))
@@ -248,7 +248,7 @@ func getRunnerFromdb(key string) (*Runner, error) {
 // delete runner from redis
 func deleteRunner(key string) error {
 
-	conn := persist.Pool.Get()
+	conn := persist.GetRedisPool().Get()
 	defer conn.Close()
 
 	_, err := conn.Do("DEL", key)

@@ -8,10 +8,10 @@ import (
 )
 
 // Redis connection pool
-var Pool *redis.Pool
+var pool *redis.Pool
 
 func InitRedis() {
-	Pool = NewPool()
+	pool = NewPool()
 }
 
 func NewPool() *redis.Pool {
@@ -24,11 +24,11 @@ func NewPool() *redis.Pool {
 		// configuring a connection.
 		Dial: func() (redis.Conn, error) {
 			// If prod env, use DialUrl with the corresponding url
-			if config.REDIS_URI != "" {
+			if config.RedisURL != "" {
 
 				log.Println("INFO: REDIS URI")
 
-				c, err := redis.DialURL(config.REDIS_URI)
+				c, err := redis.DialURL(config.RedisURL)
 				if err != nil {
 					panic(err.Error())
 				}
@@ -44,4 +44,9 @@ func NewPool() *redis.Pool {
 
 		},
 	}
+}
+
+// Return a Redis connection Pool.
+func GetRedisPool() *redis.Pool {
+	return pool
 }

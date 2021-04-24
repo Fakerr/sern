@@ -19,7 +19,7 @@ func CreateStagingBranch(ctx context.Context, client *github.Client, owner, repo
 	log.Println("INFO: start [ CreateStagingBranch ]")
 	defer log.Println("INFO: end [ CreateStagingBranch ]")
 
-	stagingName := "refs/heads/" + config.StagingBranch
+	stagingName := "refs/heads/" + config.STAGING_BRANCH
 	log.Printf("DEBU: stagingName: %v\n", stagingName)
 
 	sourceName := fmt.Sprintf("refs/pull/%d/merge", prNumber)
@@ -114,7 +114,7 @@ func ProceedMerging(ctx context.Context, client *github.Client, event *github.Ch
 	log.Printf("INFO: PR %v for %s/%s merged successfully!\n", activeNumber, owner, repo)
 	log.Printf("INFO: Deleting staging branch for %s/%s\n", owner, repo)
 
-	stagingName := "refs/heads/" + config.StagingBranch
+	stagingName := "refs/heads/" + config.STAGING_BRANCH
 	DeleteStagingBranch(ctx, client, owner, repo, stagingName)
 
 	return true, nil

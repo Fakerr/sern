@@ -37,10 +37,8 @@ func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEve
 		return nil
 	}
 
-	body := *event.Comment.Body
-
 	// if the Issue Comment is not a valid command, return
-	cmd, ok := parseComment(body)
+	cmd, ok := parseComment(*event.Comment.Body)
 	if !ok {
 		log.Println("INFO: aborting: not a sern command.")
 		return nil
@@ -54,7 +52,9 @@ func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEve
 	// Create an installation client.
 	client := client.GetInstallationClient(int(*event.Installation.ID))
 
-	if cmd == "test" {
+	// Take appropriate action based on the parsed command.
+	switch cmd {
+	case config.CMD_MERGE:
 		pr, ok, err := createPullRequest(ctx, client, owner, repo, event)
 
 		if err != nil {
@@ -73,6 +73,8 @@ func ProcessIssueCommentEvent(ctx context.Context, event *github.IssueCommentEve
 			runner.Update()
 			runner.Next(ctx, client)
 		}
+	default:
+		log.Printf("INFO: No handler for command: %v.", cmd)
 	}
 
 	return nil
@@ -89,7 +91,7 @@ func ProcessCheckSuiteEvent(ctx context.Context, event *github.CheckSuiteEvent) 
 
 	// Make sure the CheckSuite event is about the staging branch.
 	log.Printf("DEBU: checkSuite headBranch: %s\n", *event.CheckSuite.HeadBranch)
-	if *event.CheckSuite.HeadBranch != config.StagingBranch {
+	if *event.CheckSuite.HeadBranch != config.STAGING_BRANCH {
 		log.Println("INFO: CheckSuite's headBranch different from StagingBranch. Aborting!")
 		return nil
 	}
@@ -206,10 +208,12 @@ func ProcessInstallationRepositoriesEvent(ctx context.Context, event *github.Ins
 
 // Parses the comment body and return an action
 func parseComment(body string) (string, bool) {
-	if body == "test" {
-		return "test", true
+	switch body {
+	case config.CMD_MERGE:
+		return config.CMD_MERGE, true
+	default:
+		return "", false
 	}
-	return "", false
 }
 
 // Create a new pull request ready to be queued.

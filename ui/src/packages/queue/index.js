@@ -4,14 +4,8 @@ import { Table, Tag } from 'antd';
 
 function getStatus(status) {
   let color = 'yellow';
-  //if (status === 'paused') {
-  //  color = 'volcano';
-  //}
   if (status === 'running') {
     color = 'green';
-  }
-  if (status === 'wait') {
-    color = 'yellow';
   }
   return (
     <Tag color={color} key={status}>

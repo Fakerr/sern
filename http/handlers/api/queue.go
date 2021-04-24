@@ -23,8 +23,8 @@ func GetQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	private := persist.IsPrivate(owner + "/" + repo)
-	if private == true {
+	isPrivate := persist.IsPrivate(owner + "/" + repo)
+	if isPrivate == true {
 		if auth := session.IsAuthenticated(r); auth == false {
 			http.Error(w, "404 not found", http.StatusNotFound)
 			return
