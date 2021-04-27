@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/Fakerr/sern/core/runner"
@@ -18,12 +19,25 @@ func GetQueue(w http.ResponseWriter, r *http.Request) {
 	repo := mux.Vars(r)["repo"]
 
 	// Check whether or not the repository exist
-	if repo := persist.GetRepositoryByName(owner + "/" + repo); repo == nil {
+	exist, err := persist.RepositoryExists(owner + "/" + repo)
+	if err != nil {
+		log.Printf("ERRO: persist.RepositoryExists() failed with '%s'\n", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if !exist {
 		http.Error(w, "404 not found", http.StatusNotFound)
 		return
 	}
 
-	isPrivate := persist.IsPrivate(owner + "/" + repo)
+	isPrivate, err := persist.IsPrivate(owner + "/" + repo)
+	if err != nil {
+		log.Printf("ERRO: persist.IsPrivate() failed with '%s'\n", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
 	if isPrivate == true {
 		if auth := session.IsAuthenticated(r); auth == false {
 			http.Error(w, "404 not found", http.StatusNotFound)

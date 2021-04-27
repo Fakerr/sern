@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/Fakerr/sern/http/session"
@@ -14,7 +15,12 @@ func GetRepositoriesList(w http.ResponseWriter, r *http.Request) {
 	sess := session.Instance(r)
 	user := sess.Values["login"].(string)
 
-	repos := persist.GetRepositoriesByOwner(user)
+	repos, err := persist.GetRepositoriesByOwner(user)
+	if err != nil {
+		log.Printf("ERRO: persist.GetRepositoriesByOwner() failed with '%s'\n", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 
 	// Extract the repos' name
 	// using make([]string, 0) instead of var parsedRepos []string to handle the case of empty reposonse
