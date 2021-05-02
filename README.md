@@ -1,6 +1,6 @@
 # Sern #
 
-Sern is a Github bot that helps you manage your merges and prevents merge skew/semantic merge conflicts so your master branch stay always green.
+Sern is a Github bot that helps you manage your merges and prevents merge skew/semantic merge conflicts so your master branch stays always green.
 
 
 ### Motivation ###
@@ -22,3 +22,6 @@ Instead of hitting "merge", you'll get Sern to add your PR on a queue which runs
 The build is the equivalent of what would have run if the merge happened. If it goes green, the PR is merged automatically.
 
 
+### No longer maintained ###
+This project is not finished and is now archived. Many alternatives of pull requests automation branch update and merge that are more mature already exist
+(ex: [Kodiak](https://github.com/chdsbd/kodiak), [mergify](https://github.com/Mergifyio/mergify-engine) , etc...)
